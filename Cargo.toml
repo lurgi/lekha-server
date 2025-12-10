@@ -1,6 +1,28 @@
+[workspace]
+members = [".", "migration"]
+
 [package]
 name = "inklings-server"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+# Database - SeaORM
+sea-orm = { version = "1.1", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Environment variables
+dotenv = "0.15"
+
+# Error handling
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Serialization (SeaORM에서 자주 사용)
+serde = { version = "1.0", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"] }
