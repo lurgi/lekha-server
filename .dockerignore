@@ -1,0 +1,36 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Environment
+.env
+.env.*
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# Mac
+.DS_Store
+
+# Logs
+*.log

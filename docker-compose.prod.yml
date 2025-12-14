@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: inklings-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-inklings_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inklings_prod_password}
+      POSTGRES_DB: ${POSTGRES_DB:-inklings_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inklings_user} -d ${POSTGRES_DB:-inklings_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - inklings-network
+
+  api:
+    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
+    container_name: inklings-api
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-inklings_user}:${POSTGRES_PASSWORD:-inklings_prod_password}@postgres:5432/${POSTGRES_DB:-inklings_db}
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      RUST_LOG: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - inklings-network
+
+volumes:
+  postgres_data:
+
+networks:
+  inklings-network:
+    driver: bridge
