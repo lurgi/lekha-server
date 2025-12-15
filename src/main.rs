@@ -7,8 +7,11 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    println!("DEBUG: main() started");  // 디버그용
     dotenv::dotenv().ok();
+    println!("DEBUG: dotenv loaded");  // 디버그용
     tracing_subscriber::fmt::init();
+    println!("DEBUG: tracing initialized");  // 디버그용
 
     info!("Starting Inklings Server...");
 
