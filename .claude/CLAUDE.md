@@ -51,6 +51,12 @@ Rust + Axum + SeaORM + PostgreSQL 기반의 3계층 아키텍처 웹 서버
 
 ## Claude Code 작업 규칙
 
+### 명령어 실행 규칙
+- **마이그레이션은 절대 실행하지 않는다** (`cargo run -p migration` 금지)
+- **데이터를 변경하는 명령어는 실행하지 않는다** (git push, npm install 등)
+- **읽기 전용 명령어는 실행 가능** (cargo test, cargo build, git status 등)
+- 사용자가 명령어를 직접 실행하고 결과를 공유할 수도 있다
+
 ### Git 작업 규칙
 - **절대 사용자 승인 없이 `git push`를 실행하지 않는다**
 - 커밋은 사용자가 명시적으로 요청했을 때만 수행

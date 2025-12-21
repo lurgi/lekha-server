@@ -77,15 +77,44 @@
 
 ### Step 3: Service 구현
 
-1. **Service 구현**
+**중요: Service는 4단계로 나누어 구현하고, 각 단계마다 검토를 받는다.**
+
+1. **DTO 구현**
+   - `src/models/` 에 Request/Response DTO 작성
+   - Request DTO: 요청 데이터 구조
+   - Response DTO: 응답 데이터 구조 (Entity → DTO 변환)
+
+2. **✋ STOP - DTO 검토**
+   - 개발자에게 DTO 코드 보여주기
+   - 필드와 타입이 적절한지 확인
+   - 피드백 받기 및 수정
+
+3. **ServiceError 구현**
+   - `src/errors/` 에 Service 에러 타입 작성
+   - 비즈니스 에러 정의 (NotFound, Unauthorized 등)
+   - HTTP 상태 코드 매핑
+
+4. **✋ STOP - Error 검토**
+   - 개발자에게 Error 코드 보여주기
+   - 에러 케이스가 충분한지 확인
+   - 피드백 받기 및 수정
+
+5. **Service 로직 구현**
    - `src/services/` 에 Service 구현
    - Repository를 조합하여 비즈니스 로직 작성
-   - **필수: 단위 테스트 작성**
 
-2. **✋ STOP - 검토 단계**
+6. **✋ STOP - Service 검토**
    - 개발자에게 Service 코드 보여주기
    - 비즈니스 로직이 요구사항과 맞는지 확인
-   - 테스트 코드 검토
+   - 피드백 받기 및 수정
+
+7. **Test 구현**
+   - Service 단위 테스트 작성
+   - 정상 케이스, 에러 케이스 모두 포함
+
+8. **✋ STOP - Test 검토**
+   - 개발자에게 Test 코드 보여주기
+   - 테스트 케이스가 충분한지 확인
    - 피드백 받기 및 수정
 
 **✅ 체크포인트**: Service + 테스트 완료, 개발자 승인
