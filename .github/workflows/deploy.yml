@@ -67,7 +67,7 @@ jobs:
 
       - name: Test health endpoint
         run: |
-          response=$(curl -s http://localhost:8080/ || echo "failed")
+          response=$(curl -s http://localhost:8080/api/health || echo "failed")
           echo "Response: $response"
 
           if echo "$response" | grep -q "ok"; then
