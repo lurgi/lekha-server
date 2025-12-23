@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::entities::{oauth_account::OAuthProvider, user};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct OAuthLoginRequest {
     pub provider: OAuthProvider,
     pub provider_user_id: String,

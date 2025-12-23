@@ -54,3 +54,6 @@ impl UserService {
         Ok(UserResponse::from(user))
     }
 }
+
+#[cfg(test)]
+mod tests;
