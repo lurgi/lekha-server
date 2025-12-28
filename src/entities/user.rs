@@ -13,7 +13,7 @@ pub struct Model {
     #[sea_orm(unique)]
     pub email: String,
 
-    pub password_hash: String,
+    pub password_hash: Option<String>,
 
     pub created_at: DateTime,
 
@@ -21,6 +21,15 @@ pub struct Model {
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(has_many = "super::oauth_account::Entity")]
+    OAuthAccounts,
+}
+
+impl Related<super::oauth_account::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::OAuthAccounts.def()
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}
