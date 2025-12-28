@@ -10,8 +10,14 @@ edition = "2021"
 # Database - SeaORM
 sea-orm = { version = "1.1", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
 
+# Vector Database - Qdrant
+qdrant-client = "1.12"
+
 # Async runtime
 tokio = { version = "1", features = ["full"] }
+
+# HTTP client - Gemini API 호출용
+reqwest = { version = "0.12", features = ["json"] }
 
 # Environment variables
 dotenv = "0.15"
