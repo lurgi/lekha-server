@@ -16,6 +16,7 @@ inklings-server/
 │   ├── handlers/            # HTTP 요청/응답 처리 (Axum)
 │   ├── services/            # 비즈니스 로직
 │   ├── repositories/        # 데이터베이스 접근 계층
+│   ├── clients/             # 외부 API 클라이언트
 │   ├── models/              # DTO, Domain Model
 │   ├── errors/              # 커스텀 에러 타입
 │   ├── db/                  # 데이터베이스 연결
@@ -25,22 +26,25 @@ inklings-server/
 
 ---
 
-## 3계층 아키텍처 (Handlers → Services → Repositories)
+## 계층 아키텍처 (Handlers → Services → Repositories/Clients)
 
 ### 계층별 역할
 - **Handlers**: HTTP 요청 수신, DTO 검증, 응답 반환
 - **Services**: 비즈니스 로직, 트랜잭션 관리
 - **Repositories**: 데이터베이스 CRUD 작업
+- **Clients**: 외부 API 호출 (Gemini, Qdrant 등)
 
 ### 규칙
-- Handler는 Service를 호출만 한다 (직접 DB 접근 금지)
-- Service는 여러 Repository를 조합할 수 있다
+- Handler는 Service를 호출만 한다 (직접 DB/외부 API 접근 금지)
+- Service는 여러 Repository와 Client를 조합할 수 있다
 - Repository는 순수 DB 작업만 수행 (비즈니스 로직 금지)
+- Client는 순수 외부 API 호출만 수행 (비즈니스 로직 금지)
 
 ### 계층별 상세 규칙
 - **[Handler 계층](./handlers.md)**: HTTP 처리, DTO 검증, State 사용
 - **[Service 계층](./services.md)**: 비즈니스 로직, 트랜잭션, 에러 변환
 - **[Repository 계층](./repositories.md)**: CRUD 작업, 관계 처리, 네이밍 규칙
+- **[Client 계층](./clients.md)**: 외부 API 호출, Trait 추상화, Mock 구현
 
 ---
 
@@ -79,6 +83,19 @@ inklings-server/
 use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
 use thiserror::Error;
 
+// Client 계층 에러
+#[derive(Debug, Error)]
+pub enum ClientError {
+    #[error("Gemini API error: {0}")]
+    GeminiApi(String),
+
+    #[error("Network error: {0}")]
+    Network(String),
+
+    #[error("Qdrant error: {0}")]
+    Qdrant(String),
+}
+
 // Repository 계층 에러 (이미 DbErr 사용)
 
 // Service 계층 에러
@@ -92,6 +109,20 @@ pub enum ServiceError {
 
     #[error("Database error")]
     Database(#[from] DbErr),
+
+    #[error("Gemini API error: {0}")]
+    GeminiApi(String),
+}
+
+// ClientError → ServiceError 자동 변환
+impl From<ClientError> for ServiceError {
+    fn from(err: ClientError) -> Self {
+        match err {
+            ClientError::GeminiApi(msg) => ServiceError::GeminiApi(msg),
+            ClientError::Network(msg) => ServiceError::GeminiApi(msg),
+            ClientError::Qdrant(msg) => ServiceError::GeminiApi(msg),
+        }
+    }
 }
 
 // Handler 계층 에러 (최종 HTTP 응답)

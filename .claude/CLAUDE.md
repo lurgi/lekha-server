@@ -9,6 +9,9 @@ contextPaths:
   - path: "src/repositories/**/*.rs"
     rules:
       - ".claude/rules/repositories.md"
+  - path: "src/clients/**/*.rs"
+    rules:
+      - ".claude/rules/clients.md"
   - path: "src/entities/**/*.rs"
     rules:
       - ".claude/rules/entities.md"
@@ -41,6 +44,7 @@ Rust + Axum + SeaORM + PostgreSQL 기반의 3계층 아키텍처 웹 서버
 - **[핸들러 규칙](./rules/handlers.md)**: Handler 계층 상세 규칙 (`src/handlers/**/*.rs`)
 - **[서비스 규칙](./rules/services.md)**: Service 계층 상세 규칙 (`src/services/**/*.rs`)
 - **[리포지토리 규칙](./rules/repositories.md)**: Repository 계층 상세 규칙 (`src/repositories/**/*.rs`)
+- **[클라이언트 규칙](./rules/clients.md)**: Client 계층 상세 규칙 (`src/clients/**/*.rs`)
 - **[엔티티 규칙](./rules/entities.md)**: Entity 계층 상세 규칙 (`src/entities/**/*.rs`)
 - **[모델 규칙](./rules/models.md)**: Models/DTO 계층 상세 규칙 (`src/models/**/*.rs`)
 - **[에러 규칙](./rules/errors.md)**: Errors 계층 상세 규칙 (`src/errors/**/*.rs`)
