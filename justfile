@@ -63,6 +63,21 @@ build:
 test:
     cargo test
 
+# Gemini API 연결 테스트 (모두)
+test-gemini:
+    @echo "🔄 Testing Gemini API connections..."
+    cargo test --lib gemini -- --ignored --nocapture
+
+# Gemini Embedding API 연결 테스트
+test-gemini-embedding:
+    @echo "🔄 Testing Gemini Embedding API..."
+    cargo test test_real_gemini_embedding -- --ignored --nocapture
+
+# Gemini Text Generation API 연결 테스트
+test-gemini-generation:
+    @echo "🔄 Testing Gemini Text Generation API..."
+    cargo test test_real_gemini_generation -- --ignored --nocapture
+
 # 마이그레이션 실행
 migrate:
     cargo run -p migration up
