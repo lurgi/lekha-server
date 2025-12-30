@@ -5,11 +5,13 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use inklings_server::{
+    clients::Embedder,
     db,
     entities::user,
     handlers,
     models::memo_dto::{CreateMemoRequest, MemoResponse},
     services,
+    test_utils::{MockGeminiClient, MockQdrantRepository},
 };
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use std::sync::Arc;
@@ -23,7 +25,10 @@ async fn setup() -> (Router, Arc<DatabaseConnection>) {
 
     let db = Arc::new(db::create_connection(&database_url).await.unwrap());
 
-    let app = handlers::create_router(db.clone());
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder: Arc<dyn Embedder> = Arc::new(MockGeminiClient::new());
+
+    let app = handlers::create_router(db.clone(), qdrant_repo, embedder);
     (app, db)
 }
 
@@ -77,7 +82,14 @@ async fn test_list_memos_api() {
     let user1 = create_test_user(&db, 10, "user10").await;
     let user2 = create_test_user(&db, 20, "user20").await;
 
-    let memo_service = Arc::new(services::memo_service::MemoService::new(db.clone()));
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let memo_service = Arc::new(services::memo_service::MemoService::new(
+        db.clone(),
+        qdrant_repo,
+        embedder as Arc<dyn Embedder>,
+    ));
+
     memo_service
         .create_memo(
             user1.id,
@@ -133,7 +145,14 @@ async fn test_get_memo_unauthorized_api() {
     let user1 = create_test_user(&db, 30, "user30").await;
     let user2 = create_test_user(&db, 40, "user40").await;
 
-    let memo_service = Arc::new(services::memo_service::MemoService::new(db.clone()));
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let memo_service = Arc::new(services::memo_service::MemoService::new(
+        db.clone(),
+        qdrant_repo,
+        embedder as Arc<dyn Embedder>,
+    ));
+
     let memo1 = memo_service
         .create_memo(
             user1.id,

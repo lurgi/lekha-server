@@ -1,5 +1,8 @@
 use super::*;
-use crate::{db, entities::user};
+use crate::{
+    db, entities::user,
+    test_utils::{MockGeminiClient, MockQdrantRepository},
+};
 use chrono::Utc;
 use rand::Rng;
 use sea_orm::*;
@@ -10,7 +13,6 @@ async fn setup_test_db() -> (Arc<DatabaseConnection>, i32) {
         .expect("DATABASE_URL_TEST must be set. Run: just setup-test-db");
     let db = Arc::new(db::create_connection(&database_url).await.unwrap());
 
-    // 각 테스트마다 고유한 유저 생성
     let now = Utc::now().naive_utc();
     let timestamp = now.and_utc().timestamp_micros();
     let random: u32 = rand::thread_rng().gen();
@@ -32,7 +34,9 @@ async fn setup_test_db() -> (Arc<DatabaseConnection>, i32) {
 #[tokio::test]
 async fn test_create_and_get_memo() {
     let (db, user_id) = setup_test_db().await;
-    let service = MemoService::new(db);
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let service = MemoService::new(db, qdrant_repo, embedder as Arc<dyn Embedder>);
 
     let req = CreateMemoRequest {
         content: "Test memo content".to_string(),
@@ -51,7 +55,9 @@ async fn test_create_and_get_memo() {
 #[tokio::test]
 async fn test_get_memo_unauthorized() {
     let (db, user_id) = setup_test_db().await;
-    let service = MemoService::new(db);
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let service = MemoService::new(db, qdrant_repo, embedder as Arc<dyn Embedder>);
 
     let req = CreateMemoRequest {
         content: "User 1's memo".to_string(),
@@ -66,7 +72,9 @@ async fn test_get_memo_unauthorized() {
 #[tokio::test]
 async fn test_update_memo() {
     let (db, user_id) = setup_test_db().await;
-    let service = MemoService::new(db);
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let service = MemoService::new(db, qdrant_repo, embedder as Arc<dyn Embedder>);
 
     let create_req = CreateMemoRequest {
         content: "Original content".to_string(),
@@ -88,7 +96,9 @@ async fn test_update_memo() {
 #[tokio::test]
 async fn test_toggle_pin() {
     let (db, user_id) = setup_test_db().await;
-    let service = MemoService::new(db);
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let service = MemoService::new(db, qdrant_repo, embedder as Arc<dyn Embedder>);
 
     let req = CreateMemoRequest {
         content: "Pin test".to_string(),
@@ -106,7 +116,9 @@ async fn test_toggle_pin() {
 #[tokio::test]
 async fn test_list_memos_ordering() {
     let (db, user_id) = setup_test_db().await;
-    let service = MemoService::new(db);
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let service = MemoService::new(db, qdrant_repo, embedder as Arc<dyn Embedder>);
 
     let memo1 = service
         .create_memo(
@@ -141,7 +153,9 @@ async fn test_list_memos_ordering() {
 #[tokio::test]
 async fn test_delete_memo() {
     let (db, user_id) = setup_test_db().await;
-    let service = MemoService::new(db);
+    let qdrant_repo = Arc::new(MockQdrantRepository::new());
+    let embedder = Arc::new(MockGeminiClient::new());
+    let service = MemoService::new(db, qdrant_repo, embedder as Arc<dyn Embedder>);
 
     let req = CreateMemoRequest {
         content: "To be deleted".to_string(),
