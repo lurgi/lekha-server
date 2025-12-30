@@ -33,9 +33,14 @@ pub async fn run() -> Result<()> {
             .expect("Failed to initialize Qdrant repository"),
     );
 
-    let embedder = Arc::new(clients::GeminiClient::new(gemini_api_key));
+    let gemini_client = Arc::new(clients::GeminiClient::new(gemini_api_key));
 
-    let app = handlers::create_router(db, qdrant_repo, embedder as Arc<dyn clients::Embedder>);
+    let app = handlers::create_router(
+        db,
+        qdrant_repo,
+        gemini_client.clone() as Arc<dyn clients::Embedder>,
+        gemini_client as Arc<dyn clients::TextGenerator>,
+    );
 
     let listener = tokio::net::TcpListener::bind(&addr)
         .await

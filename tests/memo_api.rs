@@ -5,7 +5,7 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use inklings_server::{
-    clients::Embedder,
+    clients::{Embedder, TextGenerator},
     db,
     entities::user,
     handlers,
@@ -26,9 +26,14 @@ async fn setup() -> (Router, Arc<DatabaseConnection>) {
     let db = Arc::new(db::create_connection(&database_url).await.unwrap());
 
     let qdrant_repo = Arc::new(MockQdrantRepository::new());
-    let embedder: Arc<dyn Embedder> = Arc::new(MockGeminiClient::new());
+    let gemini_client = Arc::new(MockGeminiClient::new());
 
-    let app = handlers::create_router(db.clone(), qdrant_repo, embedder);
+    let app = handlers::create_router(
+        db.clone(),
+        qdrant_repo,
+        gemini_client.clone() as Arc<dyn Embedder>,
+        gemini_client as Arc<dyn TextGenerator>,
+    );
     (app, db)
 }
 
