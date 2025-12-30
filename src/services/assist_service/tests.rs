@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-    db, entities::user,
+    db,
+    entities::user,
     models::memo_dto::CreateMemoRequest,
     services::memo_service::MemoService,
     test_utils::{MockGeminiClient, MockQdrantRepository},
@@ -24,7 +25,7 @@ async fn setup_test_db() -> (Arc<DatabaseConnection>, i32) {
         id: NotSet,
         username: Set(format!("test_user_{}", unique_id)),
         email: Set(format!("test_{}@example.com", unique_id)),
-        password_hash: Set("test_hash".to_string()),
+        password_hash: Set(Some("test_hash".to_string())),
         created_at: Set(now),
         updated_at: Set(now),
     };
@@ -156,10 +157,7 @@ async fn test_get_assistance_user_isolation() {
         limit: 5,
     };
 
-    let result = assist_service
-        .get_assistance(user1_id, req)
-        .await
-        .unwrap();
+    let result = assist_service.get_assistance(user1_id, req).await.unwrap();
 
     assert!(result
         .similar_memos

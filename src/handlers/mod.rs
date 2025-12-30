@@ -7,9 +7,10 @@ pub mod user_handler;
 use crate::{
     clients::{Embedder, TextGenerator},
     repositories::QdrantRepo,
-    services::{assist_service::AssistService, memo_service::MemoService},
+    services::{
+        assist_service::AssistService, memo_service::MemoService, user_service::UserService,
+    },
 };
-use crate::services::{memo_service::MemoService, user_service::UserService};
 use axum::{
     routing::{delete, get, patch, post, put},
     Router,
@@ -22,6 +23,7 @@ pub struct AppState {
     pub db: Arc<DatabaseConnection>,
     pub memo_service: Arc<MemoService>,
     pub assist_service: Arc<AssistService>,
+    pub user_service: Arc<UserService>,
 }
 
 pub fn create_router(
@@ -42,11 +44,7 @@ pub fn create_router(
         embedder,
         text_generator,
     ));
-    pub user_service: Arc<UserService>,
-}
 
-pub fn create_router(db: Arc<DatabaseConnection>) -> Router {
-    let memo_service = Arc::new(MemoService::new(db.clone()));
     let user_service = Arc::new(UserService::new(db.clone()));
 
     let app_state = AppState {
