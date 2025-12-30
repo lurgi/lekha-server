@@ -22,7 +22,7 @@ async fn setup_test_db() -> (Arc<DatabaseConnection>, i32) {
         id: NotSet,
         username: Set(format!("test_user_{}", unique_id)),
         email: Set(format!("test_{}@example.com", unique_id)),
-        password_hash: Set("test_hash".to_string()),
+        password_hash: Set(Some("test_hash".to_string())),
         created_at: Set(now),
         updated_at: Set(now),
     };

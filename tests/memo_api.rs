@@ -44,7 +44,7 @@ async fn create_test_user(db: &DatabaseConnection, id: i32, username: &str) -> u
         id: Set(id),
         username: Set(username.to_owned()),
         email: Set(format!("{}@test.com", username)),
-        password_hash: Set("hashed_password".to_owned()),
+        password_hash: Set(Some("hashed_password".to_owned())),
         ..Default::default()
     };
     user.insert(db).await.unwrap()

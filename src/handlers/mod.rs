@@ -2,12 +2,14 @@ pub mod assist_handler;
 pub mod auth;
 pub mod health_handler;
 pub mod memo_handler;
+pub mod user_handler;
 
 use crate::{
     clients::{Embedder, TextGenerator},
     repositories::QdrantRepo,
     services::{assist_service::AssistService, memo_service::MemoService},
 };
+use crate::services::{memo_service::MemoService, user_service::UserService};
 use axum::{
     routing::{delete, get, patch, post, put},
     Router,
@@ -40,16 +42,24 @@ pub fn create_router(
         embedder,
         text_generator,
     ));
+    pub user_service: Arc<UserService>,
+}
+
+pub fn create_router(db: Arc<DatabaseConnection>) -> Router {
+    let memo_service = Arc::new(MemoService::new(db.clone()));
+    let user_service = Arc::new(UserService::new(db.clone()));
 
     let app_state = AppState {
         db,
         memo_service,
         assist_service,
+        user_service,
     };
 
     Router::new()
         .route("/api/health", get(health_handler::health_check))
         .route("/api/assist", post(assist_handler::assist))
+        .route("/api/users/oauth-login", post(user_handler::oauth_login))
         .nest(
             "/api/memos",
             Router::new()
