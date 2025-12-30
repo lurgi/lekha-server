@@ -6,6 +6,7 @@ pub mod handlers;
 pub mod models;
 pub mod repositories;
 pub mod services;
+pub mod test_utils;
 
 use anyhow::Result;
 use std::{env::var, sync::Arc};
@@ -32,9 +33,9 @@ pub async fn run() -> Result<()> {
             .expect("Failed to initialize Qdrant repository"),
     );
 
-    let gemini_client = Arc::new(clients::GeminiClient::new(gemini_api_key));
+    let embedder = Arc::new(clients::GeminiClient::new(gemini_api_key));
 
-    let app = handlers::create_router(db, qdrant_repo, gemini_client);
+    let app = handlers::create_router(db, qdrant_repo, embedder as Arc<dyn clients::Embedder>);
 
     let listener = tokio::net::TcpListener::bind(&addr)
         .await

@@ -3,7 +3,7 @@ pub mod health_handler;
 pub mod memo_handler;
 
 use crate::{
-    clients::{Embedder, GeminiClient},
+    clients::Embedder,
     repositories::QdrantRepo,
     services::memo_service::MemoService,
 };
@@ -23,13 +23,9 @@ pub struct AppState {
 pub fn create_router(
     db: Arc<DatabaseConnection>,
     qdrant_repo: Arc<dyn QdrantRepo>,
-    gemini_client: Arc<GeminiClient>,
+    embedder: Arc<dyn Embedder>,
 ) -> Router {
-    let memo_service = Arc::new(MemoService::new(
-        db.clone(),
-        qdrant_repo,
-        gemini_client as Arc<dyn Embedder>,
-    ));
+    let memo_service = Arc::new(MemoService::new(db.clone(), qdrant_repo, embedder));
 
     let app_state = AppState { db, memo_service };
 
