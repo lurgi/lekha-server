@@ -341,13 +341,48 @@ jobs:
               "aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }} || { echo \"❌ ECR login failed\"; exit 1; }",
               "echo \"⬇️  Pulling latest Docker image...\"",
               "docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest || { echo \"❌ Docker pull failed\"; exit 1; }",
-              "echo \"🔄 Running database migrations (backward compatible)...\"",
-              "docker compose -f docker-compose.prod.yml run --rm api sh -c \\"cd /app && cargo run -p migration up\\" || { echo \"❌ Migration failed\"; exit 1; }",
-              "echo \"✅ Migrations completed\"",
+              "echo \"\"",
+              "echo \"═══════════════════════════════════════\"",
+              "echo \"🔄 Running database migrations\"",
+              "echo \"═══════════════════════════════════════\"",
+              "echo \"⚠️  Migration Policy: Forward-only, backward-compatible\"",
+              "echo \"\"",
+              "echo \"📊 Checking current migration status...\"",
+              "docker compose -f docker-compose.prod.yml run --rm api sh -c \\"cd /app && cargo run -p migration status\\" || echo \"Status check skipped\"",
+              "echo \"\"",
+              "echo \"🚀 Applying migrations...\"",
+              "if ! docker compose -f docker-compose.prod.yml run --rm api sh -c \\"cd /app && cargo run -p migration up\\"; then",
+              "  echo \"\"",
+              "  echo \"❌ Migration failed!\"",
+              "  echo \"\"",
+              "  echo \"🛑 Deployment aborted to prevent DB/code version mismatch\"",
+              "  echo \"\"",
+              "  echo \"🔍 Troubleshooting:\"",
+              "  echo \"  1. Check migration syntax: migration/src/*.rs\"",
+              "  echo \"  2. Check DB connectivity\"",
+              "  echo \"  3. Review migration logs above\"",
+              "  echo \"\"",
+              "  exit 1",
+              "fi",
+              "echo \"\"",
+              "echo \"✅ Migrations applied successfully\"",
+              "echo \"\"",
+              "echo \"📊 Final migration status:\"",
+              "docker compose -f docker-compose.prod.yml run --rm api sh -c \\"cd /app && cargo run -p migration status\\" || echo \"Status check skipped\"",
+              "echo \"\"",
               "echo \"🔄 Updating API containers (zero-downtime)...\"",
               "docker compose -f docker-compose.prod.yml up -d --no-deps --build api || { echo \"❌ API update failed\"; exit 1; }",
-              "echo \"⏳ Waiting for new containers to be healthy...\"",
-              "sleep 5",
+              "",
+              "echo \"⏳ Waiting for containers to be healthy...\"",
+              "for i in {1..30}; do",
+              "  RUNNING=$(docker compose -f docker-compose.prod.yml ps api --format json 2>/dev/null | jq -r '.State' | grep -c running || echo 0)",
+              "  if [ \"$RUNNING\" -gt 0 ]; then",
+              "    echo \"✅ Containers are running (attempt $i/30)\"",
+              "    break",
+              "  fi",
+              "  echo \"Waiting for containers to start... ($i/30)\"",
+              "  sleep 1",
+              "done",
               "echo \"✅ Rolling update completed\"",
               "echo \"✅ Deployment commands completed\"",
               "echo \"📊 Container status:\"",
@@ -443,50 +478,10 @@ jobs:
           echo "✅ Container status check completed"
           echo ""
 
-          # Health endpoint 확인
-          echo "🔍 Step 2: Checking health endpoint..."
-
-          # EC2 퍼블릭 IP 동적 조회
-          echo "🔎 Fetching EC2 public IP..."
-          PUBLIC_IP=$(aws ec2 describe-instances \
-            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'Reservations[0].Instances[0].PublicIpAddress' \
-            --output text)
-
-          if [ "$PUBLIC_IP" != "None" ] && [ -n "$PUBLIC_IP" ]; then
-            echo "✅ Found public IP: $PUBLIC_IP"
-            HEALTH_URL="http://${PUBLIC_IP}:8080/api/health"
-            echo "Testing: $HEALTH_URL"
-
-            # 최대 30초 동안 10번 재시도
-            for i in {1..10}; do
-              echo "Attempt $i/10..."
-
-              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
-
-              if [ "$HTTP_CODE" = "200" ]; then
-                RESPONSE=$(curl -s "$HEALTH_URL")
-                echo "✅ External health check passed!"
-                echo "Response: $RESPONSE"
-                echo "HTTP Code: $HTTP_CODE"
-                exit 0
-              fi
-
-              echo "⚠️  Health check failed (HTTP $HTTP_CODE), retrying..."
-              sleep 3
-            done
-
-            echo "❌ External health check failed after 10 attempts"
-            echo "Falling back to internal health check..."
-          else
-            echo "⚠️  No public IP assigned to EC2 instance"
-            echo "Falling back to internal health check..."
-          fi
-
-          # EC2 내부에서 헬스체크 (Fallback)
+          # Health endpoint 확인 (SSM을 통한 내부 접근)
+          echo "🔍 Step 2: Verifying health endpoint (internal check via SSM)..."
+          echo "🔒 Using secure SSM connection (no public IP exposure)"
           echo ""
-          echo "🔍 Running health check from EC2 instance..."
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
             --document-name "AWS-RunShellScript" \
@@ -563,15 +558,41 @@ jobs:
               "",
               "echo \"📝 Current image to rollback to: ${{ env.ROLLBACK_IMAGE }}\"",
               "",
-              "echo \"🔄 Updating docker-compose to use previous image...\"",
-              "export ROLLBACK_IMAGE=\"${{ env.ROLLBACK_IMAGE }}\"",
+              "echo \"🔍 Verifying rollback image exists...\"",
+              "if ! docker image inspect ${{ env.ROLLBACK_IMAGE }} >/dev/null 2>&1; then",
+              "  echo \"❌ ERROR: Rollback image not found: ${{ env.ROLLBACK_IMAGE }}\"",
+              "  echo \"Available images:\"",
+              "  docker images | grep ${{ env.ECR_REPOSITORY }} || echo \"No images found\"",
+              "  echo \"\"",
+              "  echo \"🆘 Cannot rollback - previous image is missing!\"",
+              "  exit 1",
+              "fi",
+              "echo \"✅ Rollback image verified\"",
               "",
+              "echo \"🔄 Stopping current API containers...\"",
               "docker compose -f docker-compose.prod.yml down api",
-              "docker tag ${{ env.ROLLBACK_IMAGE }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest || echo \"⚠️  Image already exists\"",
+              "",
+              "echo \"🏷️  Tagging rollback image as latest...\"",
+              "if ! docker tag ${{ env.ROLLBACK_IMAGE }} ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest; then",
+              "  echo \"❌ ERROR: Failed to tag rollback image\"",
+              "  echo \"This should never happen if the image exists. Check Docker daemon.\"",
+              "  exit 1",
+              "fi",
+              "echo \"✅ Image tagged successfully\"",
+              "",
+              "echo \"🚀 Starting API with rollback image...\"",
               "docker compose -f docker-compose.prod.yml up -d --no-deps api",
               "",
-              "echo \"⏳ Waiting for rollback to complete...\"",
-              "sleep 10",
+              "echo \"⏳ Waiting for rollback containers to be healthy...\"",
+              "for i in {1..30}; do",
+              "  RUNNING=$(docker compose -f docker-compose.prod.yml ps api --format json 2>/dev/null | jq -r '.State' | grep -c running || echo 0)",
+              "  if [ \"$RUNNING\" -gt 0 ]; then",
+              "    echo \"✅ Rollback containers are running (attempt $i/30)\"",
+              "    break",
+              "  fi",
+              "  echo \"Waiting for containers to start... ($i/30)\"",
+              "  sleep 1",
+              "done",
               "",
               "echo \"📊 Container status after rollback:\"",
               "docker compose -f docker-compose.prod.yml ps",
@@ -679,6 +700,24 @@ jobs:
 
           echo ""
           echo "✅ Rollback successful! Service restored to previous version."
-          echo "⚠️  Note: Deployment failed, but rollback succeeded."
+          echo ""
+          echo "⚠️  IMPORTANT: Database Schema Warning"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "The database schema has been migrated to the LATEST version,"
+          echo "but the application code has been rolled back to a PREVIOUS version."
+          echo ""
+          echo "This is SAFE only if your migrations are backward-compatible."
+          echo ""
+          echo "🔍 What to check:"
+          echo "  1. Ensure the previous app version can work with the new schema"
+          echo "  2. Review migration changes that were applied"
+          echo "  3. Check for any new required columns or breaking changes"
+          echo ""
+          echo "🛠️  If incompatible:"
+          echo "  1. Fix the deployment issue in the new version"
+          echo "  2. Deploy the fixed version"
+          echo "  3. DO NOT manually rollback migrations (risk of data loss)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
           echo "📋 Check the deployment logs above to identify the issue."
           exit 1  # 롤백 성공했지만 배포는 실패했으므로 exit 1

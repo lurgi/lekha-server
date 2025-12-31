@@ -90,6 +90,16 @@ jobs:
             sleep 1
           done
 
+      - name: Run database migrations
+        run: |
+          echo "🔄 Running database migrations..."
+          docker run --rm \
+            --network host \
+            -e DATABASE_URL=postgres://test_user:test_pass@localhost:5432/test_db \
+            inklings-server:test \
+            sh -c "cd /app && cargo run -p migration up"
+          echo "✅ Migrations completed"
+
       - name: Start Qdrant for integration test
         run: |
           docker run -d --name qdrant-test \
@@ -121,16 +131,23 @@ jobs:
             inklings-server:test
 
           echo "Waiting for server to start..."
-          sleep 10
+          for i in {1..30}; do
+            if docker ps | grep test-container | grep -q "Up"; then
+              echo "✅ Container is running (attempt $i/30)"
+              break
+            fi
+            echo "Waiting for container to start... ($i/30)"
+            sleep 1
+          done
 
           echo "=== Container Logs ==="
           docker logs test-container
 
           echo "=== Container Status ==="
           if docker ps | grep test-container | grep -q "Up"; then
-            echo "✅ Container is running"
+            echo "✅ Container is healthy"
           else
-            echo "❌ Container failed to start"
+            echo "❌ Container failed to start after 30 seconds"
             docker logs test-container
             exit 1
           fi
