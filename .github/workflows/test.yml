@@ -48,6 +48,7 @@ jobs:
           DATABASE_URL_TEST: postgres://test_user:test_pass@localhost:5432/test_db
           QDRANT_URL: http://mock:6334
           GEMINI_API_KEY: mock-key
+          JWT_SECRET: test_secret_key_for_ci_min_32_chars_long
         run: cargo test --all-features
 
   # Job 2: Docker 빌드 검증 (병렬 실행, 캐싱 최적화)
@@ -125,6 +126,7 @@ jobs:
             -e DATABASE_URL=postgres://test_user:test_pass@localhost:5432/test_db \
             -e QDRANT_URL=http://localhost:6334 \
             -e GEMINI_API_KEY=test-api-key \
+            -e JWT_SECRET=test_secret_key_for_ci_min_32_chars_long \
             -e SERVER_HOST=127.0.0.1 \
             -e SERVER_PORT=8080 \
             -e RUST_LOG=info \
