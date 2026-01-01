@@ -41,6 +41,10 @@ axum = "0.7"
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 
+# OpenAPI / Swagger
+utoipa = { version = "5.2", features = ["axum_extras", "chrono"] }
+utoipa-swagger-ui = { version = "8.0", features = ["axum"] }
+
 [dev-dependencies]
 rand = "0.8"
 tokio = { version = "1", features = ["full"] }
