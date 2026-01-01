@@ -13,7 +13,7 @@ use crate::models::user_dto::{AuthResponse, OAuthLoginRequest, UserResponse};
     info(
         title = "Lekha Server API",
         version = "0.1.0",
-        description = "개인 메모 관리 시스템 with AI\n\n## 인증\n현재 임시 인증 방식으로 `X-User-Id` 헤더를 사용합니다.\n향후 OAuth 토큰 기반 인증으로 교체될 예정입니다."
+        description = "당신의 생각이 글이 되도록 돕습니다\n\n## 인증\nOAuth 소셜 로그인(Google, Kakao, Naver)을 통해 사용자 인증을 수행합니다.\n로그인 후 발급받은 JWT Access Token을 `Authorization: Bearer <token>` 헤더에 포함하여 API를 호출합니다."
     ),
     paths(
         crate::handlers::health_handler::health_check,
