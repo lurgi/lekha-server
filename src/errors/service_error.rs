@@ -25,6 +25,15 @@ pub enum ServiceError {
     #[error("Qdrant error: {0}")]
     Qdrant(String),
 
+    #[error("Failed to generate JWT token")]
+    TokenGenerationFailed,
+
+    #[error("Invalid or expired token")]
+    InvalidToken,
+
+    #[error("Missing JWT secret configuration")]
+    MissingJwtSecret,
+
     #[error("Database error: {0}")]
     Database(#[from] DbErr),
 }
@@ -42,6 +51,15 @@ impl IntoResponse for ServiceError {
             Self::Qdrant(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Vector database error".to_string(),
+            ),
+            Self::TokenGenerationFailed => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to generate authentication token".to_string(),
+            ),
+            Self::InvalidToken => (StatusCode::UNAUTHORIZED, self.to_string()),
+            Self::MissingJwtSecret => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Server configuration error".to_string(),
             ),
             Self::Database(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,

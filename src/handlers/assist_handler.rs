@@ -15,7 +15,7 @@ use crate::errors::ErrorResponse;
         (status = 401, description = "인증 실패", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     ),
-    security(("x_user_id" = []))
+    security(("bearer_auth" = []))
 )]
 pub async fn assist(
     State(state): State<AppState>,

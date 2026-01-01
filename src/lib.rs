@@ -8,6 +8,7 @@ pub mod openapi;
 pub mod repositories;
 pub mod services;
 pub mod test_utils;
+pub mod utils;
 
 use anyhow::Result;
 use std::{env::var, sync::Arc};

@@ -1,4 +1,4 @@
-use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
+use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
 use crate::entities::oauth_account::OAuthProvider;
@@ -6,7 +6,7 @@ use crate::errors::ErrorResponse;
 use crate::handlers::health_handler::HealthResponse;
 use crate::models::assist_dto::{AssistRequest, AssistResponse, SimilarMemo};
 use crate::models::memo_dto::{CreateMemoRequest, MemoResponse, UpdateMemoRequest};
-use crate::models::user_dto::{OAuthLoginRequest, UserResponse};
+use crate::models::user_dto::{AuthResponse, OAuthLoginRequest, UserResponse};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -31,6 +31,7 @@ use crate::models::user_dto::{OAuthLoginRequest, UserResponse};
             HealthResponse,
             OAuthLoginRequest,
             UserResponse,
+            AuthResponse,
             OAuthProvider,
             CreateMemoRequest,
             UpdateMemoRequest,
@@ -57,8 +58,8 @@ impl Modify for SecurityAddon {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
         if let Some(components) = openapi.components.as_mut() {
             components.add_security_scheme(
-                "x_user_id",
-                SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("X-User-Id"))),
+                "bearer_auth",
+                SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
             )
         }
     }

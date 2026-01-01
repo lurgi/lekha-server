@@ -1,8 +1,8 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 
 use super::AppState;
-use crate::models::user_dto::{OAuthLoginRequest, UserResponse};
 use crate::errors::ErrorResponse;
+use crate::models::user_dto::{AuthResponse, OAuthLoginRequest};
 
 #[utoipa::path(
     post,
@@ -10,7 +10,7 @@ use crate::errors::ErrorResponse;
     tag = "Users",
     request_body = OAuthLoginRequest,
     responses(
-        (status = 200, description = "로그인 성공", body = UserResponse),
+        (status = 200, description = "로그인 성공", body = AuthResponse),
         (status = 400, description = "잘못된 요청", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     )

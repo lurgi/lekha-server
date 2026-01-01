@@ -20,7 +20,7 @@ use crate::errors::ErrorResponse;
         (status = 401, description = "인증 실패", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     ),
-    security(("x_user_id" = []))
+    security(("bearer_auth" = []))
 )]
 pub async fn create_memo(
     State(state): State<AppState>,
@@ -42,7 +42,7 @@ pub async fn create_memo(
         (status = 401, description = "인증 실패", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     ),
-    security(("x_user_id" = []))
+    security(("bearer_auth" = []))
 )]
 pub async fn list_memos(
     State(state): State<AppState>,
@@ -71,7 +71,7 @@ pub async fn list_memos(
         (status = 404, description = "메모를 찾을 수 없음", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     ),
-    security(("x_user_id" = []))
+    security(("bearer_auth" = []))
 )]
 pub async fn get_memo(
     State(state): State<AppState>,
@@ -99,7 +99,7 @@ pub async fn get_memo(
         (status = 404, description = "메모를 찾을 수 없음", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     ),
-    security(("x_user_id" = []))
+    security(("bearer_auth" = []))
 )]
 pub async fn update_memo(
     State(state): State<AppState>,
@@ -126,7 +126,7 @@ pub async fn update_memo(
         (status = 404, description = "메모를 찾을 수 없음", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     ),
-    security(("x_user_id" = []))
+    security(("bearer_auth" = []))
 )]
 pub async fn delete_memo(
     State(state): State<AppState>,
@@ -152,7 +152,7 @@ pub async fn delete_memo(
         (status = 404, description = "메모를 찾을 수 없음", body = ErrorResponse),
         (status = 500, description = "서버 에러", body = ErrorResponse)
     ),
-    security(("x_user_id" = []))
+    security(("bearer_auth" = []))
 )]
 pub async fn toggle_pin(
     State(state): State<AppState>,

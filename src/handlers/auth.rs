@@ -5,36 +5,42 @@ use axum::{
 };
 use serde::Deserialize;
 
-// 여러 핸들러에서 공통으로 사용될 인증된 사용자 정보
+use crate::utils::jwt;
+
 #[derive(Debug, Deserialize)]
 pub struct AuthenticatedUser {
     pub id: i32,
 }
 
-// TODO: 실제 인증 미들웨어 구현 후, 아래 로직을 안전한 토큰 검증 로직으로 교체해야 함
 #[async_trait]
 impl<S> FromRequestParts<S> for AuthenticatedUser
 where
     S: Send + Sync,
 {
-    // 에러는 `(StatusCode, &str)` 튜플로 정의
     type Rejection = (StatusCode, &'static str);
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        // HTTP 헤더에서 "X-User-Id" 값을 추출하는 임시 로직
-        if let Some(user_id_header) = parts.headers.get("X-User-Id") {
-            if let Ok(user_id_str) = user_id_header.to_str() {
-                if let Ok(id) = user_id_str.parse::<i32>() {
-                    // 성공적으로 ID를 파싱하면 AuthenticatedUser를 반환
-                    return Ok(AuthenticatedUser { id });
-                }
-            }
-        }
+        let auth_header = parts
+            .headers
+            .get("Authorization")
+            .and_then(|value| value.to_str().ok())
+            .ok_or((StatusCode::UNAUTHORIZED, "Missing Authorization header"))?;
 
-        // 헤더가 없거나 파싱에 실패하면 401 Unauthorized 에러 반환
-        Err((
-            StatusCode::UNAUTHORIZED,
-            "Missing or invalid X-User-Id header",
-        ))
+        let token = auth_header
+            .strip_prefix("Bearer ")
+            .ok_or((StatusCode::UNAUTHORIZED, "Invalid Authorization format"))?;
+
+        let jwt_secret = std::env::var("JWT_SECRET")
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "JWT secret not configured"))?;
+
+        let claims = jwt::verify_token(token, &jwt_secret)
+            .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid or expired token"))?;
+
+        let id = claims
+            .sub
+            .parse::<i32>()
+            .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid user ID in token"))?;
+
+        Ok(AuthenticatedUser { id })
     }
 }
