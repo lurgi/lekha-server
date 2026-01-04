@@ -4,6 +4,7 @@ use axum::{
     http::{request::Parts, StatusCode},
 };
 use serde::Deserialize;
+use tower_cookies::Cookies;
 
 use crate::utils::jwt;
 
@@ -19,19 +20,23 @@ where
 {
     type Rejection = (StatusCode, &'static str);
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let auth_header = parts
-            .headers
-            .get("Authorization")
-            .and_then(|value| value.to_str().ok())
-            .ok_or((StatusCode::UNAUTHORIZED, "Missing Authorization header"))?;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let cookies = Cookies::from_request_parts(parts, state)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to parse cookies"))?;
 
-        let token = auth_header
-            .strip_prefix("Bearer ")
-            .ok_or((StatusCode::UNAUTHORIZED, "Invalid Authorization format"))?;
+        let cookie = cookies
+            .get("access_token")
+            .ok_or((StatusCode::UNAUTHORIZED, "Missing access token"))?;
 
-        let jwt_secret = std::env::var("JWT_SECRET")
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "JWT secret not configured"))?;
+        let token = cookie.value();
+
+        let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "JWT secret not configured",
+            )
+        })?;
 
         let claims = jwt::verify_token(token, &jwt_secret)
             .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid or expired token"))?;

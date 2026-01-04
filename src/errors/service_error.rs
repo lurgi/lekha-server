@@ -34,6 +34,12 @@ pub enum ServiceError {
     #[error("Missing JWT secret configuration")]
     MissingJwtSecret,
 
+    #[error("Refresh token not found or invalid")]
+    RefreshTokenNotFound,
+
+    #[error("Refresh token expired")]
+    RefreshTokenExpired,
+
     #[error("Database error: {0}")]
     Database(#[from] DbErr),
 }
@@ -61,6 +67,8 @@ impl IntoResponse for ServiceError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Server configuration error".to_string(),
             ),
+            Self::RefreshTokenNotFound => (StatusCode::UNAUTHORIZED, self.to_string()),
+            Self::RefreshTokenExpired => (StatusCode::UNAUTHORIZED, self.to_string()),
             Self::Database(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal server error".to_string(),

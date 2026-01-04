@@ -11,7 +11,7 @@ async fn setup_test_db() -> Arc<DatabaseConnection> {
 #[tokio::test]
 async fn test_oauth_login_new_user() {
     let db = setup_test_db().await;
-    let service = UserService::new(db);
+    let service = UserService::new(db).expect("Failed to create UserService");
 
     let req = OAuthLoginRequest {
         provider: OAuthProvider::Google,
@@ -20,18 +20,18 @@ async fn test_oauth_login_new_user() {
         username: "newuser".to_string(),
     };
 
-    let result = service.oauth_login(req).await.unwrap();
+    let (auth_response, access_token, refresh_token) = service.oauth_login(req).await.unwrap();
 
-    assert_eq!(result.user.username, "newuser");
-    assert_eq!(result.user.email, "newuser@example.com");
-    assert!(result.access_token.len() > 0);
-    assert_eq!(result.expires_in, 86400);
+    assert_eq!(auth_response.user.username, "newuser");
+    assert_eq!(auth_response.user.email, "newuser@example.com");
+    assert!(access_token.len() > 0);
+    assert!(refresh_token.len() > 0);
 }
 
 #[tokio::test]
 async fn test_oauth_login_existing_oauth_account() {
     let db = setup_test_db().await;
-    let service = UserService::new(db);
+    let service = UserService::new(db).expect("Failed to create UserService");
 
     let req = OAuthLoginRequest {
         provider: OAuthProvider::Kakao,
@@ -40,19 +40,21 @@ async fn test_oauth_login_existing_oauth_account() {
         username: "existing".to_string(),
     };
 
-    let first_login = service.oauth_login(req.clone()).await.unwrap();
-    let second_login = service.oauth_login(req).await.unwrap();
+    let (first_auth, first_access, first_refresh) = service.oauth_login(req.clone()).await.unwrap();
+    let (second_auth, second_access, second_refresh) = service.oauth_login(req).await.unwrap();
 
-    assert_eq!(first_login.user.id, second_login.user.id);
-    assert_eq!(first_login.user.email, second_login.user.email);
-    assert!(first_login.access_token.len() > 0);
-    assert!(second_login.access_token.len() > 0);
+    assert_eq!(first_auth.user.id, second_auth.user.id);
+    assert_eq!(first_auth.user.email, second_auth.user.email);
+    assert!(first_access.len() > 0);
+    assert!(second_access.len() > 0);
+    assert!(first_refresh.len() > 0);
+    assert!(second_refresh.len() > 0);
 }
 
 #[tokio::test]
 async fn test_oauth_login_different_provider_same_email() {
     let db = setup_test_db().await;
-    let service = UserService::new(db);
+    let service = UserService::new(db).expect("Failed to create UserService");
 
     let google_req = OAuthLoginRequest {
         provider: OAuthProvider::Google,
@@ -68,10 +70,12 @@ async fn test_oauth_login_different_provider_same_email() {
         username: "multiauth".to_string(),
     };
 
-    let google_login = service.oauth_login(google_req).await.unwrap();
-    let kakao_login = service.oauth_login(kakao_req).await.unwrap();
+    let (google_auth, google_access, google_refresh) = service.oauth_login(google_req).await.unwrap();
+    let (kakao_auth, kakao_access, kakao_refresh) = service.oauth_login(kakao_req).await.unwrap();
 
-    assert_eq!(google_login.user.id, kakao_login.user.id);
-    assert!(google_login.access_token.len() > 0);
-    assert!(kakao_login.access_token.len() > 0);
+    assert_eq!(google_auth.user.id, kakao_auth.user.id);
+    assert!(google_access.len() > 0);
+    assert!(kakao_access.len() > 0);
+    assert!(google_refresh.len() > 0);
+    assert!(kakao_refresh.len() > 0);
 }

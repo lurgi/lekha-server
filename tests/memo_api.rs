@@ -72,7 +72,7 @@ async fn test_create_memo_api() {
                 .method(http::Method::POST)
                 .uri("/api/memos")
                 .header(http::header::CONTENT_TYPE, "application/json")
-                .header(http::header::AUTHORIZATION, format!("Bearer {}", token))
+                .header(http::header::COOKIE, format!("access_token={}", token))
                 .body(Body::from(serde_json::to_string(&req_body).unwrap()))
                 .unwrap(),
         )
@@ -137,7 +137,7 @@ async fn test_list_memos_api() {
             Request::builder()
                 .method(http::Method::GET)
                 .uri("/api/memos")
-                .header(http::header::AUTHORIZATION, format!("Bearer {}", token))
+                .header(http::header::COOKIE, format!("access_token={}", token))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -156,8 +156,8 @@ async fn test_list_memos_api() {
 #[tokio::test]
 async fn test_get_memo_unauthorized_api() {
     let (app, db) = setup().await;
-    let user1 = create_test_user(&db, 30, "user30").await;
-    let user2 = create_test_user(&db, 40, "user40").await;
+    let user1 = create_test_user(&db, 9001, "user9001").await;
+    let user2 = create_test_user(&db, 9002, "user9002").await;
 
     let qdrant_repo = Arc::new(MockQdrantRepository::new());
     let embedder = Arc::new(MockGeminiClient::new());
@@ -184,7 +184,7 @@ async fn test_get_memo_unauthorized_api() {
             Request::builder()
                 .method(http::Method::GET)
                 .uri(format!("/api/memos/{}", memo1.id))
-                .header(http::header::AUTHORIZATION, format!("Bearer {}", token))
+                .header(http::header::COOKIE, format!("access_token={}", token))
                 .body(Body::empty())
                 .unwrap(),
         )

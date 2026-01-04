@@ -29,6 +29,10 @@ thiserror = "2.0"
 
 # Authentication
 jsonwebtoken = "9.0"
+tower-cookies = "0.10"
+uuid = { version = "1.0", features = ["v4"] }
+sha2 = "0.10"
+time = "0.3"
 
 # Logging
 tracing = "0.1"

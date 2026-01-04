@@ -41,8 +41,10 @@ impl From<user::Model> for UserResponse {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct AuthResponse {
     pub user: UserResponse,
-    #[schema(example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")]
-    pub access_token: String,
-    #[schema(example = 86400)]
-    pub expires_in: i64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LogoutResponse {
+    #[schema(example = "Successfully logged out")]
+    pub message: String,
 }
